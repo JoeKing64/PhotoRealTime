@@ -1,72 +1,143 @@
-📌 脚本功能：
-本脚本自动扫描当前文件夹下的照片文件（HEIC、JPG、JPEG），
-从照片的 EXIF 信息中提取拍摄时间（DateTimeOriginal），
-并将该时间设置为文件的“修改时间”（mtime），用于同步照片实际拍摄时间。
+# PhotoRealTime
 
-📁 支持格式：
-- .HEIC / .heic
-- .JPG / .jpg
-- .JPEG / .jpeg
+这个脚本用于读取照片文件中的 EXIF 拍摄时间（`DateTimeOriginal`），并将照片文件的系统时间同步为真实拍摄时间。
 
-✅ 环境要求：
-- Python 3.x（已安装）
-- 不需要安装额外 Python 库
-- 需要安装 `exiftool`（用于读取 EXIF 拍摄时间）
+适用于相机照片导入电脑后，文件的创建时间或修改时间与实际拍摄时间不一致的情况。
 
-━━━━━━━━━━━━━━━━━━━━━━
-📥 安装 exiftool 方法
-━━━━━━━━━━━━━━━━━━━━━━
+---
 
-🔹 macOS 安装步骤：
-1. 安装 Homebrew（如果尚未安装）：
-   打开“终端”，粘贴并运行以下命令：
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+## 功能说明
 
-   安装完成后，按照屏幕提示，可能需要把 Homebrew 加入到你的 shell 路径里，通常是运行：
-   echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-   eval "$(/opt/homebrew/bin/brew shellenv)"
+- 自动读取当前目录下的照片文件
+- 支持 `.heic`、`.jpg`、`.jpeg` 格式
+- 使用 `exiftool` 提取照片的 EXIF 拍摄时间
+- 根据不同操作系统自动选择更新时间方式：
+  - **Windows**：同时更新文件的“创建时间”和“修改时间”
+  - **macOS**：只更新文件的“修改时间”
+  - **其他系统**：只更新文件的“修改时间”
+- 自动跳过没有 EXIF 拍摄时间的照片
+- 处理完成后输出成功、失败、跳过数量统计
 
+---
 
-2. 安装 exiftool：
-   brew install exiftool
+## 使用前准备
 
-3. 验证安装是否成功：
-   exiftool -ver
-   如果能看到版本号，例如 12.76，则说明成功。
+### 1. 安装 Python
 
-🔹 Windows 安装步骤：
-1. 访问官网下载安装包：
+请先确保电脑已经安装 Python 3.x。
+
+可以随便安装，任意版本皆可；若已安装，则无需重复安装，可直接跳过此步骤。
+
+### 2. 安装 ExifTool
+
+本脚本依赖 ExifTool 读取照片 EXIF 信息，因此运行前必须先安装 ExifTool。
+
+#### Windows
+
+1. 打开 ExifTool 官网：
+
    https://exiftool.org/
 
-2. 下载“Windows Executable”（可执行文件）版本：
-   - 解压后，将 `exiftool(-k).exe` 改名为 `exiftool.exe`
-   - 将它放到你运行脚本的同一目录，或添加到系统 PATH
+2. 下载 Windows 版本：
 
-3. 验证安装是否成功：
-   打开命令提示符，输入：
+   ```text
+   exiftool-13.xx_64.zip.zip
+   ```
+
+3. 解压后，将：
+
+   ```text
+   exiftool(-k).exe
+   ```
+
+   去掉后面的(-k)，重命名为：
+
+   ```text
+   exiftool.exe
+   ```
+
+4. 将 `exiftool.exe` 所在目录加入系统 `PATH`。
+
+5. 打开命令行验证：
+
+   ```bash
    exiftool -ver
+   ```
 
-━━━━━━━━━━━━━━━━━━━━━━
-▶️ 运行脚本
-━━━━━━━━━━━━━━━━━━━━━━
+6. 正常情况下会显示版本号，则为安装成功，例如：
 
-1. 将 `fix_photo_mtime.py` 脚本放在包含照片的文件夹内。
-2. 打开终端（macOS）或命令提示符（Windows）。
-3. 进入该文件夹路径。
-4. 执行脚本：
+   ```text
+   13.31
+   ```
 
-   python fix_photo_mtime.py
+#### macOS
 
-脚本会自动处理当前文件夹中的所有 HEIC 和 JPEG 照片，
-并将每个文件的“修改时间”更新为拍摄时间。
+##### 1. 安装 Homebrew（如果尚未安装）
 
-━━━━━━━━━━━━━━━━━━━━━━
-📌 注意事项：
-━━━━━━━━━━━━━━━━━━━━━━
+打开“终端”，粘贴并运行以下命令：
 
-- 脚本不会修改照片内容，只修改文件的“修改日期”（mtime）。
-- 如果某张照片缺少拍摄时间，将跳过处理并给出提示。
-- 脚本默认处理当前文件夹（可修改代码支持子目录）。
-- 若你使用的是中文系统，确保照片是由支持 EXIF 拍摄时间的设备拍摄（例如 iPhone、相机）。
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
-━━━━━━━━━━━━━━━━━━━━━━
+安装完成后，按照屏幕提示，可能需要把 Homebrew 加入到 Shell 路径中，通常执行：
+
+```bash
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+```
+
+##### 2. 安装 ExifTool
+
+```bash
+brew install exiftool
+```
+
+##### 3. 验证安装是否成功
+
+```bash
+exiftool -ver
+```
+
+如果能看到版本号（例如 `12.76`），则说明安装成功。
+
+---
+
+## 使用方法
+
+1. 将 `PhotoRealTime_v2.0.py` 放到需要处理的照片文件夹中。
+2. 将所有需要修正时间的照片也放在同一个文件夹中。
+3. 双击或右键运行脚本。
+
+脚本会自动处理当前文件夹下支持格式的照片。
+
+---
+
+## 处理逻辑
+
+脚本会按以下流程工作：
+
+1. 判断当前操作系统。
+2. 扫描当前文件夹下的 `.heic`、`.jpg`、`.jpeg` 文件。
+3. 使用 `exiftool` 读取每张照片的 `DateTimeOriginal`。
+4. 如果读取成功：
+   - Windows 下同步创建时间和修改时间；
+   - macOS 下同步修改时间。
+5. 如果照片没有 EXIF 拍摄时间，则跳过该文件。
+6. 最后输出处理统计结果。
+
+---
+
+## 输出示例
+
+```text
+[SYSTEM] 当前系统判定为: Windows
+[MODE] Windows：同时修改文件的“创建时间”和“修改时间”
+[OK] IMG_0001.JPG 创建时间 + 修改时间 已更新为 2024-01-01 12:30:00
+[SKIP] 未找到 EXIF 拍摄时间: IMG_0002.JPG
+
+===== 处理完成 =====
+成功: 1 张
+失败: 0 张
+跳过(无EXIF): 1 张
+```
